@@ -5,11 +5,8 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { CheckoutForm } from './CheckoutForm';
 
-const stripePromise = loadStripe(
-  (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY && import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY.trim() !== "")
-    ? import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY 
-    : 'pk_test_51TgQLKCHfNM20bTBIlBC0kuQP3smet3Ymy9aQvkCdC8fVulYIns63xlzZnLRiOsdwkFmtQMufvzfx04k04w7yDxT00iKuLkvBP'
-);
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.trim();
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : Promise.resolve(null);
 
 interface PaywallProps {
   onUpgrade: (tier: 'pro' | 'enterprise') => void;
