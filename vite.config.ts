@@ -11,7 +11,9 @@ export default defineConfig(({mode}) => {
       jsx: 'automatic',
     },
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      // Never inline server-side secrets into the browser bundle.
+      // Client-side AI calls should route through /api/* endpoints.
+      'process.env.GEMINI_API_KEY': JSON.stringify(''),
     },
     resolve: {
       alias: {
