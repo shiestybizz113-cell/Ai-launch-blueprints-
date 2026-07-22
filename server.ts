@@ -152,6 +152,27 @@ Return standard polished Markdown format, omitting any greeting or generic comme
     }
   });
 
+  // Generic Gemini proxy. Keeps the API key server-side — the browser never
+  // receives GEMINI_API_KEY. Accepts the same { model, contents, config } shape
+  // the @google/genai SDK uses and returns the text + candidates.
+  app.post("/api/gemini/generate", async (req, res) => {
+    const { model, contents, config } = req.body ?? {};
+    if (!model || !contents) {
+      return res.status(400).json({ error: "`model` and `contents` are required." });
+    }
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(503).json({ error: "GEMINI_API_KEY is not configured on the server." });
+    }
+    try {
+      const client = getGemini();
+      const response = await client.models.generateContent({ model, contents, config });
+      res.json({ text: response.text ?? "", candidates: response.candidates ?? [] });
+    } catch (error: any) {
+      console.error("Gemini generate error:", error);
+      res.status(500).json({ error: error.message || "Gemini request failed." });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
