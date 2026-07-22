@@ -9,7 +9,25 @@ import prettier from 'prettier/standalone';
 import * as babelPlugin from 'prettier/plugins/babel';
 import * as estreePlugin from 'prettier/plugins/estree';
 import { LiveProvider, LiveError, LivePreview } from 'react-live';
-import { GoogleGenAI } from '@google/genai';
+
+// Calls Gemini through the server proxy so the API key stays server-side.
+// Returns the same shape the client code relies on ({ text, candidates }).
+async function generateContent(payload: {
+  model: string;
+  contents: any;
+  config?: Record<string, any>;
+}): Promise<{ text: string; candidates: any[] }> {
+  const res = await fetch('/api/gemini/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Gemini request failed (${res.status})`);
+  }
+  return res.json();
+}
 
 interface UIGeneratorProps {
   variation: Variation;
@@ -149,8 +167,7 @@ const AIImage = ({ prompt, className, aspectRatio = '16:9', quality = 'Standard'
     const generate = async () => {
       setLoading(true);
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const response = await ai.models.generateContent({
+        const response = await generateContent({
           model: 'gemini-2.5-flash-image',
           contents: { parts: [{ text: `Professional high-quality UI image: ${prompt}. Artistic Style: ${style}, Quality: ${quality}, Lighting: ${lighting}. Aspect Ratio: ${aspectRatio}. Optimized for modern landing pages.` }] },
           config: { imageConfig: { aspectRatio: aspectRatio as any } }
@@ -475,9 +492,8 @@ export function UIGenerator({ variation, tier, onUpgrade, credits, spendCredits 
 
     try {
       spendCredits(cost);
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      
-      const res = await ai.models.generateContent({
+
+      const res = await generateContent({
         model: "gemini-3-flash-preview",
         contents: `
         You are a Prompt Engineering Expert. 
@@ -532,9 +548,8 @@ export function UIGenerator({ variation, tier, onUpgrade, credits, spendCredits 
     try {
       // Spend credits
       spendCredits(cost);
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      
-      const trackContext = variation === 'indie' 
+
+      const trackContext = variation === 'indie'
         ? "BUSINESS CONTEXT: You are designing for an Indie Hacker / Bootstrapped startup. Copywriting MUST be high-conversion, direct, and use FOMO (e.g., 'Limited spots', 'Lifetime deal'). Layouts should be bold and modern."
         : "BUSINESS CONTEXT: You are designing for a VC-backed Enterprise startup. Copywriting MUST build trust, emphasize security (SOC2, SSO, SLA), scalability, and ROI. Layouts should be highly professional, clean, and enterprise-grade.";
 
@@ -599,7 +614,7 @@ IMAGES:
 Use Tailwind CSS classes for styling.
 Return ONLY the raw JSON object. Do not include markdown formatting like \`\`\`json or \`\`\`.`;
 
-      const response = await ai.models.generateContent({
+      const response = await generateContent({
         model: "gemini-3.1-pro-preview",
         contents: prompt,
         config: {
@@ -649,9 +664,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting like \`\`\`j
     setIsRefining(true);
     
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      
-      const trackContext = variation === 'indie' 
+      const trackContext = variation === 'indie'
         ? "BUSINESS CONTEXT: You are designing for an Indie Hacker / Bootstrapped startup. Copywriting MUST be high-conversion, direct, and use FOMO (e.g., 'Limited spots', 'Lifetime deal'). Layouts should be bold and modern."
         : "BUSINESS CONTEXT: You are designing for a VC-backed Enterprise startup. Copywriting MUST build trust, emphasize security (SOC2, SSO, SLA), scalability, and ROI. Layouts should be highly professional, clean, and enterprise-grade.";
 
@@ -713,7 +726,7 @@ Use Tailwind CSS classes for styling.
 Return ONLY the raw TypeScript React code. Do not include markdown formatting like \`\`\`tsx or \`\`\`.
 Do not include any explanations.`;
 
-      const response = await ai.models.generateContent({
+      const response = await generateContent({
         model: "gemini-3.1-pro-preview",
         contents: `Here is the existing React component code:\n\n${generatedUI}\n\nUser Request to modify this code: ${refinementPrompt}\n\nReturn the complete updated React code.`,
         config: {
