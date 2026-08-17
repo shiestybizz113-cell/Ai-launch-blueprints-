@@ -22,12 +22,22 @@ interface AffiliateRewardsProps {
 export function AffiliateRewards({ stats, history, onRedeem, onEarn, onPurchase, setRewardStats }: AffiliateRewardsProps) {
   const [copied, setCopied] = useState(false);
   const [redemptionSuccess, setRedemptionSuccess] = useState<string | null>(null);
-  const referralLink = "https://ai-blueprint.io/ref/founder123";
+  const referralCode = (stats as any).referralCode || 'user';
+  const referralLink = `${window.location.origin}/?ref=${referralCode}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShare = () => {
+    const text = `Join AI Catalyst and get 50 free credits! Use my referral link: ${referralLink}`;
+    if (navigator.share) {
+      navigator.share({ title: 'AI Catalyst', text, url: referralLink });
+    } else {
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+    }
   };
 
   const handleRedeem = (amount: number, type: 'cash' | 'feature', description: string) => {
@@ -139,7 +149,7 @@ export function AffiliateRewards({ stats, history, onRedeem, onEarn, onPurchase,
                   {copied ? <Check className="w-5 h-5 text-green-300" /> : <Copy className="w-5 h-5" />}
                 </button>
               </div>
-              <button className="w-full sm:w-auto px-8 py-4 bg-white text-indigo-700 rounded-2xl font-bold hover:bg-indigo-50 transition-all shadow-lg active:scale-95">
+              <button onClick={handleShare} className="w-full sm:w-auto px-8 py-4 bg-white text-indigo-700 rounded-2xl font-bold hover:bg-indigo-50 transition-all shadow-lg active:scale-95">
                 Share Now
               </button>
             </div>

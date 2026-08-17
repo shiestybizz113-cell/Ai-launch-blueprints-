@@ -17,8 +17,10 @@ interface PaywallProps {
 export function Paywall({ onUpgrade, title, config }: PaywallProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [amount, setAmount] = useState(0);
+  const [selectedTier, setSelectedTier] = useState<'pro' | 'enterprise'>('pro');
 
   const handleTierSelect = async (tier: 'pro' | 'enterprise', amount: number) => {
+    setSelectedTier(tier);
     const res = await fetch('/api/create-payment-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -34,7 +36,7 @@ export function Paywall({ onUpgrade, title, config }: PaywallProps) {
       <Elements stripe={stripePromise} options={{ clientSecret }}>
         <div className="p-8 bg-gray-900 rounded-2xl w-full max-w-lg mx-auto border border-white/10 shadow-2xl">
             <h2 className="text-xl font-bold text-white mb-6">Complete Payment</h2>
-            <CheckoutForm amount={amount} onPaymentSuccess={() => onUpgrade('pro')} />
+            <CheckoutForm amount={amount} onPaymentSuccess={() => onUpgrade(selectedTier)} />
         </div>
       </Elements>
     );

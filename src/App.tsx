@@ -84,19 +84,41 @@ export default function App() {
     localStorage.setItem('app_state', JSON.stringify({ variation, activeSection, tier }));
   }, [variation, activeSection, tier]);
 
-  const [credits, setCredits] = useState(100);
-  const [rewardStats, setRewardStats] = useState({
-    referrals: 12,
-    earnedCredits: 450,
-    potentialEarnings: 1500,
-    redeemedCash: 250,
-    profileCompleted: false,
-    dailyLogins: 1,
+  const [credits, setCredits] = useState(() => {
+    const saved = localStorage.getItem('vault_credits');
+    return saved ? parseInt(saved) : 100;
   });
 
-  const [usageHistory, setUsageHistory] = useState<CreditUsage[]>([
-    { id: '1', date: new Date().toISOString(), action: 'Welcome Bonus', amount: 100, type: 'earn' },
-  ]);
+  const [rewardStats, setRewardStats] = useState(() => {
+    const saved = localStorage.getItem('vault_reward_stats');
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return {
+      referrals: 0,
+      earnedCredits: 0,
+      potentialEarnings: 0,
+      redeemedCash: 0,
+      profileCompleted: false,
+      dailyLogins: 1,
+      referralCode: Math.random().toString(36).substring(2, 10),
+    };
+  });
+
+  const [usageHistory, setUsageHistory] = useState<CreditUsage[]>(() => {
+    const saved = localStorage.getItem('vault_usage_history');
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return [
+      { id: '1', date: new Date().toISOString(), action: 'Welcome Bonus', amount: 100, type: 'earn' },
+    ];
+  });
+
+  // Persist credits, history, and rewards to localStorage
+  useEffect(() => { localStorage.setItem('vault_credits', String(credits)); }, [credits]);
+  useEffect(() => { localStorage.setItem('vault_reward_stats', JSON.stringify(rewardStats)); }, [rewardStats]);
+  useEffect(() => { localStorage.setItem('vault_usage_history', JSON.stringify(usageHistory)); }, [usageHistory]);
 
   const [recentExports, setRecentExports] = useState<ExportLog[]>(() => {
     const saved = localStorage.getItem('recent_exports_log');
@@ -172,10 +194,24 @@ export default function App() {
     if (params.get('success') === 'true') {
       const newCredits = parseInt(params.get('credits') || '0');
       if (newCredits > 0) {
-        addCredits(newCredits, 'Credit Top-up');
-        // Clear query params
-        window.history.replaceState({}, document.title, "/");
+        addCredits(newCredits, 'Credit Pack Purchase');
+        toast.success(`+${newCredits} credits added to your account!`);
       }
+      window.history.replaceState({}, document.title, "/");
+    }
+    // Referral detection
+    const ref = params.get('ref');
+    if (ref && !localStorage.getItem('vault_ref_used')) {
+      localStorage.setItem('vault_ref_used', ref);
+      addCredits(50, `Referral Bonus (via ${ref})`);
+      setRewardStats(prev => ({
+        ...prev,
+        referrals: prev.referrals + 1,
+        earnedCredits: prev.earnedCredits + 50,
+        potentialEarnings: prev.potentialEarnings + 10,
+      }));
+      toast.success("Referral bonus! +50 credits for joining via a friend.");
+      window.history.replaceState({}, document.title, "/");
     }
   }, []);
 
