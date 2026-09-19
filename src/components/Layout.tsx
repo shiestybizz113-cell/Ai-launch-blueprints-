@@ -250,15 +250,13 @@ export function Layout({ variation, setVariation, activeSection, setActiveSectio
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Operator</span>
               <span className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[140px]">AI Founder v1.0</span>
             </div>
-            {tier === 'free' && (
-              <button 
-                onClick={onAdminLogin}
-                className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-400 hover:text-blue-600 transition-all shadow-sm cursor-pointer"
-                title="Identity Login"
-              >
-                <Key className="w-4 h-4" />
-              </button>
-            )}
+            <button 
+              onClick={onAdminLogin}
+              className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-400 hover:text-blue-600 transition-all shadow-sm cursor-pointer"
+              title="Owner Access"
+            >
+              <Key className="w-4 h-4" />
+            </button>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-200/20 dark:border-gray-800/20 flex items-center justify-center gap-1.5 text-[10px] text-gray-400 dark:text-gray-500 font-mono select-none">
             <span>Powered by</span>
